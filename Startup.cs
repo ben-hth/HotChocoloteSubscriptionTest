@@ -30,6 +30,13 @@ namespace HotChocoloteSubscriptionTest
         {
             services.AddControllers();
 
+            services.AddLogging(lb =>
+            {
+                lb.AddSerilog();
+            });
+
+            services.AddInMemorySubscriptions();
+
             services.AddGraphQL(sp =>
             SchemaBuilder.New()
                 .AddServices(sp)

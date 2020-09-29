@@ -7,5 +7,9 @@ namespace HotChocoloteSubscriptionTest
 {
     public class Query
     {
+        public string HelloWorld()
+        {
+            return "Hello world";
+        }
     }
 }
