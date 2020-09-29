@@ -30,6 +30,7 @@ namespace HotChocoloteSubscriptionTest
             string key = Guid.NewGuid().ToString();
             _logger.LogInformation("Starting subcription for {key}", key);
 
+            // print an informational message when Cancel is called in NewDataStopMessageHandler
             dataStopToken.Register(() =>
             {
                 using var scope = _serviceProvider.CreateScope();
@@ -38,6 +39,9 @@ namespace HotChocoloteSubscriptionTest
                 logger.LogError("Cancel called for {key}", key);
             });
 
+
+            // start a message producer when the subscription is resolved. publishes once per second to ITopicEventSender.
+            // it will be stopped when dataStopToken is cancelled by NewDataStopMessageHandler
             _ = Task.Factory.StartNew(async () =>
             {
                 using var scope = _serviceProvider.CreateScope();

@@ -41,11 +41,8 @@ namespace HotChocoloteSubscriptionTest
 
             services.AddHttpContextAccessor();
 
-            //services.AddSingleton<NewDataStartMessageHandler>();
+            // NewDataStopMessageHandler calls Cancel on the CancellationTokenSource it gets from HttpContext.Items
             services.AddSingleton<NewDataStopMessageHandler>();
-            //services.AddSingleton<DataStartMessageHandler>();
-
-            //services.AddSingleton<IMessageHandler>(sp => sp.GetRequiredService<NewDataStartMessageHandler>());
             services.AddSingleton<IMessageHandler>(sp => sp.GetRequiredService<NewDataStopMessageHandler>());
 
             services.AddInMemorySubscriptions();
@@ -55,23 +52,19 @@ namespace HotChocoloteSubscriptionTest
                 .AddServices(sp)
                 .AddQueryType<Query>()
                 .AddSubscriptionType<Subscription>()
-                .Create(),
-                build => 
-                build
-                .Use(next => async context =>
-                {
-                    await next.Invoke(context);
-                })
-                .UseDefaultPipeline());
+                .Create());
 
-
+            // query interceptor to set up a CancellationTokenSource to be passed to NewDataStopMessageHandler and to the subscription resolver
             services.AddQueryRequestInterceptor((ctx, builder, ct) =>
             {
                 if (ctx.WebSockets.IsWebSocketRequest)
                 {
                     var cts = new CancellationTokenSource();
+
+                    // pass to NewDataStopMessageHandler
                     ctx.Items.Add("DataStopCancellationTokenSource", cts);
 
+                    // pass to subscription resolver
                     builder.SetProperty("DataStopCancellationToken", cts.Token);
                 }
 

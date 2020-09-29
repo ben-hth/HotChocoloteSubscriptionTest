@@ -8,7 +8,7 @@ namespace HotChocoloteSubscriptionTest
 {
     public class TestEvent
     {
-        public string Key { get; set; }
+        public string Key { get; set; } = null!;
 
         public int Count { get; set; }
 

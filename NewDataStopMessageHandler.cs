@@ -24,14 +24,17 @@ namespace HotChocoloteSubscriptionTest
             DataStopMessage message,
             CancellationToken cancellationToken)
         {
+            // original code from DataStopMessageHandler
             var httpContext = _contextAccessor.HttpContext;
             connection.Subscriptions.Unregister(message.Id);
 
+            // grap the CancellationTokenSource that the QueryRequestInterceptor created and stored in the HttpContext
             var cts = (CancellationTokenSource)httpContext.Items["DataStopCancellationTokenSource"];
             httpContext.Items.Remove("DataStopCancellationTokenSource");
+
+            // will cancel the event producer started in the subscription resolver
             cts.Cancel();
 
-            //httpContext.Abort();
             return Task.CompletedTask;
         }
     }
