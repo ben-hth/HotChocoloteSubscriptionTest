@@ -1,4 +1,6 @@
 ﻿using HotChocolate;
+using HotChocolate.Resolvers;
+using HotChocolate.Server;
 using HotChocolate.Subscriptions;
 using HotChocolate.Types;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,12 +25,12 @@ namespace HotChocoloteSubscriptionTest
         }
 
         [SubscribeAndResolve]
-        public async Task<IAsyncEnumerable<TestEvent>> OnTestEvent([Service] ITopicEventReceiver eventReceiver, CancellationToken cancellationToken)
+        public async Task<IAsyncEnumerable<TestEvent>> OnTestEvent([Service] ITopicEventReceiver eventReceiver, [Service]IResolverContext context, [State("DataStopCancellationToken")]CancellationToken dataStopToken, CancellationToken cancellationToken)
         {
             string key = Guid.NewGuid().ToString();
             _logger.LogInformation("Starting subcription for {key}", key);
 
-            cancellationToken.Register(() =>
+            dataStopToken.Register(() =>
             {
                 using var scope = _serviceProvider.CreateScope();
                 var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CancellationToken.Register");
@@ -48,7 +50,7 @@ namespace HotChocoloteSubscriptionTest
 
                 try
                 {
-                    while (cancellationToken.IsCancellationRequested == false)
+                    while (dataStopToken.IsCancellationRequested == false)
                     {
                         var testEvent = new TestEvent()
                         {
@@ -59,9 +61,9 @@ namespace HotChocoloteSubscriptionTest
 
                         logger.LogInformation("Publishing {key} {count} {dateTime}", testEvent.Key, testEvent.Count, testEvent.DateTime);
 
-                        await eventSender.SendAsync(new TestEventTopic(key), testEvent, cancellationToken);
+                        await eventSender.SendAsync(new TestEventTopic(key), testEvent, dataStopToken);
 
-                        await Task.Delay(1000, cancellationToken);
+                        await Task.Delay(1000, dataStopToken);
                     }
                 }
                 catch (TaskCanceledException) { }
